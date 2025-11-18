@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Arrears Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #back-to-dashboard {
+            background-color: #e67e22;
+        }
+
+        #back-to-dashboard:hover {
+            background-color: #d35400;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .filter-actions button {
+            height: 38px;
+        }
+
+        #apply-filter {
+            background-color: #2ecc71;
+        }
+
+        #apply-filter:hover {
+            background-color: #27ae60;
+        }
+
+        #clear-filter {
+            background-color: #e67e22;
+        }
+
+        #clear-filter:hover {
+            background-color: #d35400;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .data-container {
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .second-table {
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th, td {
+            border: 1px solid #e1e1e1;
+            padding: 10px 12px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 500;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .sub-header {
+            background-color: #2c3e50;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .total-row {
+            background-color: #2c3e50 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e8f4fd;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.error {
+            background-color: #e74c3c;
+        }
+
+        .import-export-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .import-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #generate-abstract {
+            background-color: #2ecc71;
+        }
+
+        #generate-abstract:hover {
+            background-color: #27ae60;
+        }
+
+        #download-abstract {
+            background-color: #3498db;
+        }
+
+        #download-abstract:hover {
+            background-color: #2980b9;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #3498db;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .file-type-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-type-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .actions-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .action-button {
+            padding: 15px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            text-align: center;
+        }
+
+        .action-button:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dashboard - Arrears Management System</h1>
+            <div class="controls">
+                <button id="back-to-dashboard">Back to Main</button>
+            </div>
+        </header>
+
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="cons-type-filter">Cons Type</label>
+                <select id="cons-type-filter">
+                    <option value="">All Types</option>
+                    <option value="Live">Live</option>
+                    <option value="TD">TD</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="closing-balance-filter">Closing Balance ></label>
+                <input type="number" id="closing-balance-filter" placeholder="Enter amount">
+            </div>
+            <div class="filter-group">
+                <label for="age-filter">Age in Days ></label>
+                <input type="number" id="age-filter" placeholder="Enter days">
+            </div>
+            <div class="filter-actions">
+                <button id="apply-filter">Apply Filter</button>
+                <button id="clear-filter">Clear Filter</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="visible-columns-count">8 columns visible</span>
+            <span id="total-rows-count">0 rows</span>
+            <span id="import-status">Ready to generate abstract</span>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+
+        <div class="data-container">
+            <table id="data-table">
+                <thead>
+                    <tr id="table-header">
+                        <th rowspan="2">Section</th>
+                        <th colspan="2" class="sub-header">1.Res</th>
+                        <th colspan="2" class="sub-header">2.Com</th>
+                        <th colspan="2" class="sub-header">3.Ind</th>
+                        <th colspan="2" class="sub-header">RCI</th>
+                        <th colspan="2" class="sub-header">8.Other</th>
+                        <th colspan="2" class="sub-header">RCI+O</th>
+                    </tr>
+                    <tr id="table-sub-header">
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+
+            <!-- Second Table -->
+            <div style="height: 20px;"></div> <!-- Space between tables -->
+            
+            <table id="second-table" class="second-table">
+                <thead>
+                    <tr id="second-table-header">
+                        <th rowspan="2">Section</th>
+                        <th colspan="2" class="sub-header">4.Ag</th>
+                        <th colspan="2" class="sub-header">5.StrLt</th>
+                        <th colspan="2" class="sub-header">6.PWW</th>
+                        <th colspan="2" class="sub-header">7.Public S</th>
+                        <th colspan="2" class="sub-header">EVCS</th>
+                        <th colspan="2" class="sub-header">Grand Total</th>
+                    </tr>
+                    <tr id="second-table-sub-header">
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                        <th>Cons</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="second-table-body">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="import-export-container">
+            <div class="import-controls">
+                <div class="date-selector">
+                    <select id="date-day">
+                        <option value="">Day</option>
+                        <!-- Days will be populated dynamically -->
+                    </select>
+                    <select id="date-month">
+                        <option value="">Month</option>
+                        <!-- Months will be populated dynamically -->
+                    </select>
+                    <select id="date-year">
+                        <option value="">Year</option>
+                        <!-- Years will be populated dynamically -->
+                    </select>
+                </div>
+                <div class="file-type-selector">
+                    <select id="file-type">
+                        <option value="xlsx">XLSX</option>
+                        <option value="xls">XLS</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+                <button id="generate-abstract">Generate Abstract</button>
+                <button id="download-abstract">Download Abstract</button>
+            </div>
+        </div>
+
+        <div class="actions-section">
+            <button class="action-button" id="generate-custom-list">Generate Customize List</button>
+            <button class="action-button">Staff Wise Abstract</button>
+            <button class="action-button">Section Wise Compliance</button>
+            <button class="action-button">Staff Wise Compliance</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // GitHub Repository URL
+        const GITHUB_REPO_URL = "https://bu0965.github.io/Disconnection-List/";
+
+        // Default sections (case insensitive)
+        const defaultSections = ["Anewadi", "Karhar", "Kudal", "Medha", "Tapola"];
+
+        // Data storage
+        let allDataRows = [];
+        let filteredDataRows = [];
+        let dbsLookupData = null;
+        let processedData = null;
+        let rawData = []; // Store raw data for filtering
+
+        // Excel column mapping
+        const excelColumnMapping = {
+            "Consumer No": 6,           // Column G (0-based index)
+            "Sub Category": 8,          // Column I
+            "Closing Balance": 13,      // Column N
+            "Age in Days": 15,          // Column P
+            "TD/PD Date": 18            // Column S
+        };
+
+        // Category mapping
+        const categoryMapping = {
+            "1.Res": "1.Res",
+            "2.Com": "2.Com", 
+            "3.Ind": "3.Ind",
+            "4.Ag": "4.Ag",
+            "5.StrLt": "5.StrLt",
+            "6.PWW": "6.PWW",
+            "7.Public S": "7.Public S",
+            "8.Other": "8.Other",
+            "9.Oth": "9.Oth"
+        };
+
+        // Initialize date dropdowns
+        function initializeDateDropdowns() {
+            const daySelect = document.getElementById('date-day');
+            const monthSelect = document.getElementById('date-month');
+            const yearSelect = document.getElementById('date-year');
+
+            // Populate days (1-31)
+            for (let i = 1; i <= 31; i++) {
+                const option = document.createElement('option');
+                option.value = i.toString().padStart(2, '0');
+                option.textContent = i.toString().padStart(2, '0');
+                daySelect.appendChild(option);
+            }
+
+            // Populate months (1-12)
+            const months = [
+                { value: '01', name: 'January' },
+                { value: '02', name: 'February' },
+                { value: '03', name: 'March' },
+                { value: '04', name: 'April' },
+                { value: '05', name: 'May' },
+                { value: '06', name: 'June' },
+                { value: '07', name: 'July' },
+                { value: '08', name: 'August' },
+                { value: '09', name: 'September' },
+                { value: '10', name: 'October' },
+                { value: '11', name: 'November' },
+                { value: '12', name: 'December' }
+            ];
+
+            months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.value;
+                option.textContent = month.name;
+                monthSelect.appendChild(option);
+            });
+
+            // Populate years (2020 to current year + 1)
+            const currentYear = new Date().getFullYear();
+            for (let year = 2020; year <= currentYear + 1; year++) {
+                const option = document.createElement('option');
+                option.value = year.toString();
+                option.textContent = year.toString();
+                yearSelect.appendChild(option);
+            }
+
+            // Set default to current date
+            const today = new Date();
+            daySelect.value = today.getDate().toString().padStart(2, '0');
+            monthSelect.value = (today.getMonth() + 1).toString().padStart(2, '0');
+            yearSelect.value = today.getFullYear().toString();
+        }
+
+        // Get selected date
+        function getSelectedDate() {
+            const day = document.getElementById('date-day').value;
+            const month = document.getElementById('date-month').value;
+            const year = document.getElementById('date-year').value;
+
+            if (day && month && year) {
+                return `${day}-${month}-${year}`;
+            }
+            return null;
+        }
+
+        // Get selected file type
+        function getSelectedFileType() {
+            return document.getElementById('file-type').value;
+        }
+
+        // Show notification
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = isError ? 'notification error' : 'notification';
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+
+        // Update import status
+        function updateImportStatus(message) {
+            document.getElementById('import-status').textContent = message;
+        }
+
+        // Update progress bar
+        function updateProgress(percentage, message = '') {
+            const progressBar = document.getElementById('progress-bar');
+            const progressContainer = document.getElementById('progress-container');
+
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage}%${message ? ' - ' + message : ''}`;
+
+            if (percentage > 0 && percentage < 100) {
+                progressContainer.style.display = 'block';
+            } else if (percentage === 100) {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+
+        // Show loading state
+        function setLoadingState(loading) {
+            const generateButton = document.getElementById('generate-abstract');
+            const downloadButton = document.getElementById('download-abstract');
+            const container = document.querySelector('.container');
+
+            if (loading) {
+                container.classList.add('loading');
+                generateButton.disabled = true;
+                generateButton.textContent = 'Generating...';
+                downloadButton.disabled = true;
+            } else {
+                container.classList.remove('loading');
+                generateButton.disabled = false;
+                generateButton.textContent = 'Generate Abstract';
+                downloadButton.disabled = false;
+            }
+        }
+
+        // Update status bar
+        function updateStatusBar() {
+            const rowCount = filteredDataRows.length > 0 ? filteredDataRows.length : allDataRows.length;
+            document.getElementById('total-rows-count').textContent = `${rowCount} rows`;
+
+            const filterStatus = document.getElementById('import-status');
+            if (filteredDataRows.length > 0 && filteredDataRows.length < allDataRows.length) {
+                filterStatus.textContent = `${filteredDataRows.length} of ${allDataRows.length} rows after filtering`;
+            } else if (allDataRows.length > 0) {
+                filterStatus.textContent = `${allDataRows.length} rows loaded`;
+            } else {
+                filterStatus.textContent = 'Ready to generate abstract';
+            }
+        }
+
+        // Fetch file from GitHub repository
+        async function fetchFileFromGitHub(filePath) {
+            try {
+                const fileUrl = `${GITHUB_REPO_URL}${filePath}`;
+                console.log('Fetching file from:', fileUrl);
+
+                const response = await fetch(fileUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Check if file is empty
+                if (arrayBuffer.byteLength === 0) {
+                    throw new Error('File is empty');
+                }
+
+                return arrayBuffer;
+            } catch (error) {
+                console.error('Error fetching file from GitHub:', error);
+                throw error;
+            }
+        }
+
+        // Load DBS lookup data
+        async function loadDBSLookupData() {
+            try {
+                console.log('Loading DBS lookup data...');
+                const data = await fetchFileFromGitHub('DBS.xlsx');
+                
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Get data from range A2:D250
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 'A2:D250' });
+                
+                // Create lookup object (case insensitive)
+                const lookupData = {};
+                jsonData.forEach(row => {
+                    if (row.length >= 4 && row[0]) {
+                        const villageCode = String(row[0]).trim();
+                        const section = String(row[1] || '').toLowerCase();
+                        const village = String(row[2] || '');
+                        const staff = String(row[3] || '');
+                        
+                        lookupData[villageCode] = {
+                            section: section,
+                            village: village,
+                            staff: staff
+                        };
+                    }
+                });
+                
+                dbsLookupData = lookupData;
+                console.log('DBS lookup data loaded successfully');
+                return lookupData;
+            } catch (error) {
+                console.error('Error loading DBS lookup data:', error);
+                return null;
+            }
+        }
+
+        // VLOOKUP function (case insensitive)
+        function vlookup(villageCode) {
+            if (!dbsLookupData || !villageCode) return null;
+            return dbsLookupData[villageCode] || null;
+        }
+
+        // Case insensitive section matching
+        function getMatchingSection(sectionFromDBS) {
+            if (!sectionFromDBS) return null;
+            
+            const sectionLower = sectionFromDBS.toLowerCase();
+            for (const defaultSection of defaultSections) {
+                if (defaultSection.toLowerCase() === sectionLower) {
+                    return defaultSection;
+                }
+            }
+            return null;
+        }
+
+        // Determine Cons Type based on TD/PD Date
+        function getConsType(tdPdDate) {
+            if (tdPdDate && String(tdPdDate).trim() !== '') {
+                return "TD";
+            }
+            return "Live";
+        }
+
+        // Process data from Excel file
+        function processExcelData(jsonData) {
+            const sectionData = {};
+            rawData = []; // Reset raw data
+            
+            // Initialize sections
+            defaultSections.forEach(section => {
+                sectionData[section] = {
+                    "1.Res": { cons: 0, amount: 0 },
+                    "2.Com": { cons: 0, amount: 0 },
+                    "3.Ind": { cons: 0, amount: 0 },
+                    "4.Ag": { cons: 0, amount: 0 },
+                    "5.StrLt": { cons: 0, amount: 0 },
+                    "6.PWW": { cons: 0, amount: 0 },
+                    "7.Public S": { cons: 0, amount: 0 },
+                    "8.Other": { cons: 0, amount: 0 },
+                    "9.Oth": { cons: 0, amount: 0 }
+                };
+            });
+
+            // Process each row
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length === 0) continue;
+
+                try {
+                    // Get consumer number and extract village code (first 5 digits)
+                    const consumerNo = String(row[excelColumnMapping["Consumer No"]] || '');
+                    const villageCode = consumerNo.substring(0, 5);
+                    
+                    // Get sub category, closing balance, age in days, and TD/PD date
+                    const subCategory = String(row[excelColumnMapping["Sub Category"]] || '');
+                    const closingBalance = parseFloat(row[excelColumnMapping["Closing Balance"]] || 0);
+                    const ageInDays = parseFloat(row[excelColumnMapping["Age in Days"]] || 0);
+                    const tdPdDate = row[excelColumnMapping["TD/PD Date"]] || '';
+                    
+                    // Determine cons type
+                    const consType = getConsType(tdPdDate);
+
+                    // Skip if invalid data
+                    if (!villageCode || !subCategory) continue;
+
+                    // Get section from DBS lookup
+                    const lookupResult = vlookup(villageCode);
+                    if (!lookupResult || !lookupResult.section) continue;
+
+                    // Match section case insensitively
+                    const section = getMatchingSection(lookupResult.section);
+                    if (!section) continue;
+
+                    // Store raw data for filtering
+                    rawData.push({
+                        section: section,
+                        subCategory: subCategory,
+                        closingBalance: closingBalance,
+                        ageInDays: ageInDays,
+                        consType: consType,
+                        consumerNo: consumerNo
+                    });
+
+                    // Map sub category to our categories
+                    let targetCategory = null;
+                    
+                    if (subCategory === "1.Res") targetCategory = "1.Res";
+                    else if (subCategory === "2.Com") targetCategory = "2.Com";
+                    else if (subCategory === "3.Ind") targetCategory = "3.Ind";
+                    else if (subCategory === "4.Ag") targetCategory = "4.Ag";
+                    else if (subCategory === "5.StrLt") targetCategory = "5.StrLt";
+                    else if (subCategory === "6.PWW") targetCategory = "6.PWW";
+                    else if (subCategory === "7.Public S") targetCategory = "7.Public S";
+                    else if (subCategory === "8.Other") targetCategory = "8.Other";
+                    else if (subCategory === "9.Oth") targetCategory = "9.Oth";
+                    
+                    if (targetCategory && sectionData[section][targetCategory]) {
+                        sectionData[section][targetCategory].cons += 1;
+                        sectionData[section][targetCategory].amount += closingBalance;
+                    }
+
+                } catch (error) {
+                    console.warn('Error processing row:', error);
+                    continue;
+                }
+            }
+
+            return sectionData;
+        }
+
+        // Apply filters to the table
+        function applyFilters() {
+            const consTypeFilter = document.getElementById('cons-type-filter').value;
+            const closingBalanceFilter = document.getElementById('closing-balance-filter').value;
+            const ageFilter = document.getElementById('age-filter').value;
+
+            if (!processedData) {
+                showNotification('No data available to filter', true);
+                return;
+            }
+
+            // Reset filtered data
+            const filteredData = {};
+            
+            // Initialize sections for filtered data
+            defaultSections.forEach(section => {
+                filteredData[section] = {
+                    "1.Res": { cons: 0, amount: 0 },
+                    "2.Com": { cons: 0, amount: 0 },
+                    "3.Ind": { cons: 0, amount: 0 },
+                    "4.Ag": { cons: 0, amount: 0 },
+                    "5.StrLt": { cons: 0, amount: 0 },
+                    "6.PWW": { cons: 0, amount: 0 },
+                    "7.Public S": { cons: 0, amount: 0 },
+                    "8.Other": { cons: 0, amount: 0 },
+                    "9.Oth": { cons: 0, amount: 0 }
+                };
+            });
+
+            // Apply filters to raw data
+            rawData.forEach(row => {
+                let includeRow = true;
+
+                // Apply cons type filter
+                if (consTypeFilter && row.consType !== consTypeFilter) {
+                    includeRow = false;
+                }
+
+                // Apply closing balance filter
+                if (closingBalanceFilter && row.closingBalance <= parseFloat(closingBalanceFilter)) {
+                    includeRow = false;
+                }
+
+                // Apply age filter
+                if (ageFilter && row.ageInDays <= parseFloat(ageFilter)) {
+                    includeRow = false;
+                }
+
+                // If row passes all filters, add to filtered data
+                if (includeRow) {
+                    const section = row.section;
+                    const subCategory = row.subCategory;
+                    
+                    // Map sub category to target category
+                    let targetCategory = null;
+                    if (subCategory === "1.Res") targetCategory = "1.Res";
+                    else if (subCategory === "2.Com") targetCategory = "2.Com";
+                    else if (subCategory === "3.Ind") targetCategory = "3.Ind";
+                    else if (subCategory === "4.Ag") targetCategory = "4.Ag";
+                    else if (subCategory === "5.StrLt") targetCategory = "5.StrLt";
+                    else if (subCategory === "6.PWW") targetCategory = "6.PWW";
+                    else if (subCategory === "7.Public S") targetCategory = "7.Public S";
+                    else if (subCategory === "8.Other") targetCategory = "8.Other";
+                    else if (subCategory === "9.Oth") targetCategory = "9.Oth";
+                    
+                    if (targetCategory && filteredData[section][targetCategory]) {
+                        filteredData[section][targetCategory].cons += 1;
+                        filteredData[section][targetCategory].amount += row.closingBalance;
+                    }
+                }
+            });
+
+            updateTableWithData(filteredData);
+            showNotification(`Filter applied. Data filtered based on criteria.`);
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('cons-type-filter').value = '';
+            document.getElementById('closing-balance-filter').value = '';
+            document.getElementById('age-filter').value = '';
+
+            if (processedData) {
+                updateTableWithData(processedData);
+                showNotification('Filters cleared. Showing all data.');
+            }
+        }
+
+        // Update both tables with data
+        function updateTableWithData(sectionData) {
+            updateFirstTable(sectionData);
+            updateSecondTable(sectionData);
+            updateStatusBar();
+        }
+
+        // Update first table with data
+        function updateFirstTable(sectionData) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+
+            const firstTableCategories = ["1.Res", "2.Com", "3.Ind", "RCI", "8.Other", "RCI+O"];
+            let grandTotals = new Array(12).fill(0);
+
+            // Add sections with data for first table
+            defaultSections.forEach(section => {
+                if (!sectionData[section]) return;
+
+                const row = document.createElement('tr');
+                
+                // Section name
+                const sectionCell = document.createElement('td');
+                sectionCell.textContent = section;
+                row.appendChild(sectionCell);
+
+                let rowTotals = new Array(12).fill(0);
+
+                // Add data for each category in first table
+                firstTableCategories.forEach((category, categoryIndex) => {
+                    let cons = 0;
+                    let amount = 0;
+
+                    if (category === "RCI") {
+                        // RCI = 1.Res + 2.Com + 3.Ind (Cons and Amount)
+                        cons = (sectionData[section]["1.Res"]?.cons || 0) + 
+                               (sectionData[section]["2.Com"]?.cons || 0) + 
+                               (sectionData[section]["3.Ind"]?.cons || 0);
+                        amount = (sectionData[section]["1.Res"]?.amount || 0) + 
+                                (sectionData[section]["2.Com"]?.amount || 0) + 
+                                (sectionData[section]["3.Ind"]?.amount || 0);
+                    } else if (category === "RCI+O") {
+                        // RCI+O = RCI + 8.Other (Cons and Amount)
+                        const rciCons = (sectionData[section]["1.Res"]?.cons || 0) + 
+                                       (sectionData[section]["2.Com"]?.cons || 0) + 
+                                       (sectionData[section]["3.Ind"]?.cons || 0);
+                        const rciAmount = (sectionData[section]["1.Res"]?.amount || 0) + 
+                                         (sectionData[section]["2.Com"]?.amount || 0) + 
+                                         (sectionData[section]["3.Ind"]?.amount || 0);
+                        cons = rciCons + (sectionData[section]["8.Other"]?.cons || 0);
+                        amount = rciAmount + (sectionData[section]["8.Other"]?.amount || 0);
+                    } else {
+                        // Direct mapping for other categories
+                        cons = sectionData[section][category]?.cons || 0;
+                        amount = sectionData[section][category]?.amount || 0;
+                    }
+
+                    // Cons count
+                    const consCell = document.createElement('td');
+                    consCell.textContent = Math.round(cons);
+                    row.appendChild(consCell);
+                    rowTotals[categoryIndex * 2] += cons;
+                    grandTotals[categoryIndex * 2] += cons;
+
+                    // Amount
+                    const amountCell = document.createElement('td');
+                    amountCell.textContent = amount.toFixed(2);
+                    row.appendChild(amountCell);
+                    rowTotals[categoryIndex * 2 + 1] += amount;
+                    grandTotals[categoryIndex * 2 + 1] += amount;
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            // Add TOTAL row for first table
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            
+            const totalLabelCell = document.createElement('td');
+            totalLabelCell.textContent = 'TOTAL';
+            totalRow.appendChild(totalLabelCell);
+
+            for (let i = 0; i < 12; i++) {
+                const totalCell = document.createElement('td');
+                if (i % 2 === 0) {
+                    totalCell.textContent = Math.round(grandTotals[i]);
+                } else {
+                    totalCell.textContent = grandTotals[i].toFixed(2);
+                }
+                totalRow.appendChild(totalCell);
+            }
+
+            tableBody.appendChild(totalRow);
+        }
+
+        // Update second table with data
+        function updateSecondTable(sectionData) {
+            const tableBody = document.getElementById('second-table-body');
+            tableBody.innerHTML = '';
+
+            const secondTableCategories = ["4.Ag", "5.StrLt", "6.PWW", "7.Public S", "EVCS", "Grand Total"];
+            let grandTotals = new Array(12).fill(0);
+
+            // Add sections with data for second table
+            defaultSections.forEach(section => {
+                if (!sectionData[section]) return;
+
+                const row = document.createElement('tr');
+                
+                // Section name
+                const sectionCell = document.createElement('td');
+                sectionCell.textContent = section;
+                row.appendChild(sectionCell);
+
+                let rowTotals = new Array(12).fill(0);
+
+                // Add data for each category in second table
+                secondTableCategories.forEach((category, categoryIndex) => {
+                    let cons = 0;
+                    let amount = 0;
+
+                    if (category === "Grand Total") {
+                        // Grand Total = 1.Res + 2.Com + 3.Ind + 8.Other + 4.Ag + 5.StrLt + 6.PWW + 7.Public S + EVCS (9.Oth)
+                        cons = (sectionData[section]["1.Res"]?.cons || 0) +
+                               (sectionData[section]["2.Com"]?.cons || 0) +
+                               (sectionData[section]["3.Ind"]?.cons || 0) +
+                               (sectionData[section]["8.Other"]?.cons || 0) +
+                               (sectionData[section]["4.Ag"]?.cons || 0) +
+                               (sectionData[section]["5.StrLt"]?.cons || 0) +
+                               (sectionData[section]["6.PWW"]?.cons || 0) +
+                               (sectionData[section]["7.Public S"]?.cons || 0) +
+                               (sectionData[section]["9.Oth"]?.cons || 0); // EVCS uses 9.Oth data
+                        
+                        amount = (sectionData[section]["1.Res"]?.amount || 0) +
+                                (sectionData[section]["2.Com"]?.amount || 0) +
+                                (sectionData[section]["3.Ind"]?.amount || 0) +
+                                (sectionData[section]["8.Other"]?.amount || 0) +
+                                (sectionData[section]["4.Ag"]?.amount || 0) +
+                                (sectionData[section]["5.StrLt"]?.amount || 0) +
+                                (sectionData[section]["6.PWW"]?.amount || 0) +
+                                (sectionData[section]["7.Public S"]?.amount || 0) +
+                                (sectionData[section]["9.Oth"]?.amount || 0); // EVCS uses 9.Oth data
+                    } else if (category === "EVCS") {
+                        // EVCS - using 9.Oth data (normal color)
+                        cons = sectionData[section]["9.Oth"]?.cons || 0;
+                        amount = sectionData[section]["9.Oth"]?.amount || 0;
+                    } else {
+                        // Direct mapping for other categories
+                        cons = sectionData[section][category]?.cons || 0;
+                        amount = sectionData[section][category]?.amount || 0;
+                    }
+
+                    // Cons count
+                    const consCell = document.createElement('td');
+                    consCell.textContent = Math.round(cons);
+                    row.appendChild(consCell);
+                    rowTotals[categoryIndex * 2] += cons;
+                    grandTotals[categoryIndex * 2] += cons;
+
+                    // Amount
+                    const amountCell = document.createElement('td');
+                    amountCell.textContent = amount.toFixed(2);
+                    row.appendChild(amountCell);
+                    rowTotals[categoryIndex * 2 + 1] += amount;
+                    grandTotals[categoryIndex * 2 + 1] += amount;
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            // Add TOTAL row for second table
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            
+            const totalLabelCell = document.createElement('td');
+            totalLabelCell.textContent = 'TOTAL';
+            totalRow.appendChild(totalLabelCell);
+
+            for (let i = 0; i < 12; i++) {
+                const totalCell = document.createElement('td');
+                if (i % 2 === 0) {
+                    totalCell.textContent = Math.round(grandTotals[i]);
+                } else {
+                    totalCell.textContent = grandTotals[i].toFixed(2);
+                }
+                totalRow.appendChild(totalCell);
+            }
+
+            tableBody.appendChild(totalRow);
+        }
+
+        // Download abstract as Excel file
+        function downloadAbstract() {
+            if (!processedData) {
+                showNotification('No data available to download', true);
+                return;
+            }
+
+            try {
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+
+                // Prepare data for first table
+                const firstTableData = [];
+                
+                // Add headers for first table
+                firstTableData.push(['Section', '1.Res Cons', '1.Res Amount', '2.Com Cons', '2.Com Amount', 
+                                   '3.Ind Cons', '3.Ind Amount', 'RCI Cons', 'RCI Amount', 
+                                   '8.Other Cons', '8.Other Amount', 'RCI+O Cons', 'RCI+O Amount']);
+
+                // Add data for first table
+                defaultSections.forEach(section => {
+                    if (!processedData[section]) return;
+                    
+                    const row = [
+                        section,
+                        processedData[section]["1.Res"]?.cons || 0,
+                        processedData[section]["1.Res"]?.amount || 0,
+                        processedData[section]["2.Com"]?.cons || 0,
+                        processedData[section]["2.Com"]?.amount || 0,
+                        processedData[section]["3.Ind"]?.cons || 0,
+                        processedData[section]["3.Ind"]?.amount || 0,
+                        (processedData[section]["1.Res"]?.cons || 0) + (processedData[section]["2.Com"]?.cons || 0) + (processedData[section]["3.Ind"]?.cons || 0),
+                        (processedData[section]["1.Res"]?.amount || 0) + (processedData[section]["2.Com"]?.amount || 0) + (processedData[section]["3.Ind"]?.amount || 0),
+                        processedData[section]["8.Other"]?.cons || 0,
+                        processedData[section]["8.Other"]?.amount || 0,
+                        (processedData[section]["1.Res"]?.cons || 0) + (processedData[section]["2.Com"]?.cons || 0) + (processedData[section]["3.Ind"]?.cons || 0) + (processedData[section]["8.Other"]?.cons || 0),
+                        (processedData[section]["1.Res"]?.amount || 0) + (processedData[section]["2.Com"]?.amount || 0) + (processedData[section]["3.Ind"]?.amount || 0) + (processedData[section]["8.Other"]?.amount || 0)
+                    ];
+                    firstTableData.push(row);
+                });
+
+                // Create worksheet for first table
+                const ws1 = XLSX.utils.aoa_to_sheet(firstTableData);
+                XLSX.utils.book_append_sheet(wb, ws1, 'Abstract Table 1');
+
+                // Prepare data for second table
+                const secondTableData = [];
+                
+                // Add headers for second table
+                secondTableData.push(['Section', '4.Ag Cons', '4.Ag Amount', '5.StrLt Cons', '5.StrLt Amount', 
+                                    '6.PWW Cons', '6.PWW Amount', '7.Public S Cons', '7.Public S Amount', 
+                                    'EVCS Cons', 'EVCS Amount', 'Grand Total Cons', 'Grand Total Amount']);
+
+                // Add data for second table
+                defaultSections.forEach(section => {
+                    if (!processedData[section]) return;
+                    
+                    const grandTotalCons = Object.values(processedData[section]).reduce((sum, cat) => sum + (cat.cons || 0), 0);
+                    const grandTotalAmount = Object.values(processedData[section]).reduce((sum, cat) => sum + (cat.amount || 0), 0);
+                    
+                    const row = [
+                        section,
+                        processedData[section]["4.Ag"]?.cons || 0,
+                        processedData[section]["4.Ag"]?.amount || 0,
+                        processedData[section]["5.StrLt"]?.cons || 0,
+                        processedData[section]["5.StrLt"]?.amount || 0,
+                        processedData[section]["6.PWW"]?.cons || 0,
+                        processedData[section]["6.PWW"]?.amount || 0,
+                        processedData[section]["7.Public S"]?.cons || 0,
+                        processedData[section]["7.Public S"]?.amount || 0,
+                        processedData[section]["9.Oth"]?.cons || 0,
+                        processedData[section]["9.Oth"]?.amount || 0,
+                        grandTotalCons,
+                        grandTotalAmount
+                    ];
+                    secondTableData.push(row);
+                });
+
+                // Create worksheet for second table
+                const ws2 = XLSX.utils.aoa_to_sheet(secondTableData);
+                XLSX.utils.book_append_sheet(wb, ws2, 'Abstract Table 2');
+
+                // Generate Excel file and trigger download
+                const fileName = `arrears_abstract_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+
+                showNotification('Abstract downloaded successfully!');
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Error downloading abstract: ' + error.message, true);
+            }
+        }
+
+        // Generate abstract from data
+        async function generateAbstract() {
+            try {
+                // Get selected date and file type
+                const datePart = getSelectedDate();
+                const fileType = getSelectedFileType();
+
+                if (!datePart) {
+                    showNotification('Please select a valid date', true);
+                    return;
+                }
+
+                const fileName = `${datePart}.${fileType}`;
+
+                setLoadingState(true);
+                updateProgress(0, 'Fetching data files from GitHub...');
+
+                // Load DBS lookup data first
+                updateProgress(10, 'Loading DBS lookup data...');
+                await loadDBSLookupData();
+
+                updateProgress(30, 'Fetching main data file...');
+
+                // Try different date formats and file types
+                const possibleFileNames = [
+                    fileName,
+                    fileName.toLowerCase(),
+                    fileName.replace(/-/g, '_'),
+                    fileName.replace('.xlsx', '.csv'),
+                    fileName.replace('.xls', '.csv'),
+                    fileName.replace('.csv', '.xlsx')
+                ];
+
+                let data = null;
+                let usedFileName = '';
+
+                for (const name of possibleFileNames) {
+                    try {
+                        data = await fetchFileFromGitHub(name);
+                        usedFileName = name;
+                        console.log(`Successfully loaded ${name}`);
+                        break;
+                    } catch (error) {
+                        console.warn(`Failed to load ${name}:`, error);
+                        continue;
+                    }
+                }
+
+                if (!data) {
+                    throw new Error(`Could not find data file. Tried: ${possibleFileNames.join(', ')}`);
+                }
+
+                updateProgress(60, 'Processing data...');
+
+                let jsonData;
+                if (fileType === 'csv') {
+                    const csvString = new TextDecoder().decode(data);
+                    jsonData = XLSX.utils.sheet_to_json(
+                        XLSX.utils.aoa_to_sheet(
+                            csvString.split('\n').map(row => row.split(','))
+                        ),
+                        { header: 1 }
+                    );
+                } else {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        throw new Error('Excel file contains no sheets');
+                    }
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                }
+
+                if (jsonData.length <= 1) {
+                    showNotification('No data found in the file', true);
+                    updateImportStatus('No data found');
+                    setLoadingState(false);
+                    return;
+                }
+
+                updateProgress(80, 'Generating abstract...');
+
+                // Process the data
+                processedData = processExcelData(jsonData);
+
+                setLoadingState(false);
+                updateProgress(100, 'Abstract generated successfully');
+
+                // Update tables with processed data
+                updateTableWithData(processedData);
+
+                showNotification(`Successfully generated abstract from ${usedFileName}!`);
+                updateImportStatus(`Abstract generated from ${usedFileName}`);
+
+                updateStatusBar();
+
+            } catch (error) {
+                console.error('Error generating abstract:', error);
+                showNotification('Error generating abstract: ' + error.message, true);
+                updateImportStatus('Generation failed');
+                setLoadingState(false);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('generate-abstract').addEventListener('click', generateAbstract);
+        document.getElementById('download-abstract').addEventListener('click', downloadAbstract);
+        document.getElementById('generate-custom-list').addEventListener('click', function() {
+            window.location.href = 'ddl-list.html';
+        });
+
+        document.getElementById('apply-filter').addEventListener('click', applyFilters);
+        document.getElementById('clear-filter').addEventListener('click', clearFilters);
+
+        // Back to Main button
+        document.getElementById('back-to-dashboard').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // Action buttons
+        document.querySelectorAll('.action-button').forEach(button => {
+            if (button.id !== 'generate-custom-list') {
+                button.addEventListener('click', function() {
+                    const buttonText = this.textContent;
+                    showNotification(`${buttonText} feature will be implemented soon.`);
+                });
+            }
+        });
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDateDropdowns();
+
+            // Debug help
+            console.log('Dashboard initialized');
+            console.log('Default sections:', defaultSections);
+            console.log('GitHub Repo URL:', GITHUB_REPO_URL);
+        });
+    </script>
+</body>
+</html>
