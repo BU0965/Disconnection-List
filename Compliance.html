@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Arrears Compliance System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #back-to-dashboard {
+            background-color: #e67e22;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .data-container {
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th, td {
+            border: 1px solid #e1e1e1;
+            padding: 10px 12px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        td:first-child, th:first-child {
+            text-align: left;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .sub-header {
+            background-color: #2c3e50;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .total-row {
+            background-color: #2c3e50 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e8f4fd;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.error {
+            background-color: #e74c3c;
+        }
+
+        .import-export-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .import-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        #generate-compliance {
+            background-color: #2ecc71;
+            font-weight: bold;
+        }
+
+        #download-abstract {
+            background-color: #3498db;
+        }
+
+        #download-updated-list {
+            background-color: #9b59b6;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #3498db;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .date-selector select, .file-type-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .freeze-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .freeze-list-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .file-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            flex: 1;
+            padding: 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .section-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .freeze-dropdown-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .freeze-dropdown-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .freeze-dropdown-wrapper select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dashboard - Arrears Compliance System</h1>
+            <div class="controls">
+                <button id="back-to-dashboard">Back to Main</button>
+            </div>
+        </header>
+
+        <!-- Freeze List Selection Section (Primary Input) -->
+        <div class="freeze-list-container">
+            <span class="section-label">Step 1: Select Freeze List (File to Compare)</span>
+            <div class="freeze-list-header">
+                <div class="freeze-list-title">Freeze List Selection</div>
+            </div>
+            <div class="freeze-dropdown-container">
+                <div class="freeze-dropdown-wrapper">
+                    <select id="freeze-file-select">
+                        <option value="">Select Freeze List from GitHub</option>
+                    </select>
+                    <button id="refresh-freeze-list">Refresh</button>
+                </div>
+                <div style="text-align: center; font-weight: bold;">OR</div>
+                <div class="file-upload-container">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="freeze-file-input" accept=".xlsx,.xls,.csv">
+                    </div>
+                    <div id="file-info" style="margin-top:5px; font-size: 12px; color: #666;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+
+        <div class="status-bar">
+            <span id="import-status">Waiting for input...</span>
+        </div>
+
+        <!-- Result Table -->
+        <div class="data-container">
+            <table id="data-table">
+                <thead>
+                    <tr id="table-header">
+                        <th rowspan="2" style="text-align: left;">Section</th>
+                        <th colspan="2" class="sub-header">TOTAL</th>
+                        <th colspan="2" class="sub-header" style="background-color: #27ae60;">Paid</th>
+                        <th colspan="2" class="sub-header" style="background-color: #f39c12;">Part Paid</th>
+                        <th colspan="2" class="sub-header" style="background-color: #e67e22;">TD</th>
+                        <th colspan="2" class="sub-header" style="background-color: #8e44ad;">Govt</th>
+                        <th colspan="2" class="sub-header" style="background-color: #c0392b;">Balance</th>
+                    </tr>
+                    <tr id="table-sub-header">
+                        <th>Count</th>
+                        <th>Amount</th>
+                        <th>Count</th>
+                        <th>Amount</th>
+                        <th>Count</th>
+                        <th>Amount</th>
+                        <th>Count</th>
+                        <th>Amount</th>
+                        <th>Count</th>
+                        <th>Amount</th>
+                        <th>Count</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Controls for Github Fetch and Generation -->
+        <div class="import-export-container">
+            <div class="import-controls">
+                <div>
+                    <span class="section-label">Step 2: Select GitHub Date & Generate</span>
+                    <div class="date-selector">
+                        <select id="date-day"><option value="">Day</option></select>
+                        <select id="date-month"><option value="">Month</option></select>
+                        <select id="date-year"><option value="">Year</option></select>
+                        
+                        <select id="file-type" style="display:none;">
+                            <option value="xlsx">XLSX</option>
+                        </select>
+                        
+                        <button id="generate-compliance">GENERATE COMPLIANCE</button>
+                        <button id="download-abstract">Download Abstract</button>
+                        <button id="download-updated-list">Download Updated List</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // GitHub Repository URL
+        const GITHUB_REPO_URL = "https://bu0965.github.io/Disconnection-List/";
+        
+        // Define Sections for Categorization
+        const defaultSections = ["Anewadi", "Karhar", "Kudal", "Medha", "Tapola"];
+
+        // Global State
+        let processedData = null;
+        let selectedFreezeFile = null;
+        let dbsLookupData = null;
+        let freezeListData = null;
+        let categorizedConsumers = {};
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDateDropdowns();
+            loadFreezeListDropdown();
+            console.log('Compliance System Initialized');
+        });
+
+        function initializeDateDropdowns() {
+            const daySelect = document.getElementById('date-day');
+            const monthSelect = document.getElementById('date-month');
+            const yearSelect = document.getElementById('date-year');
+
+            // Days
+            for (let i = 1; i <= 31; i++) {
+                const val = i.toString().padStart(2, '0');
+                const opt = new Option(val, val);
+                daySelect.add(opt);
+            }
+            // Months
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            months.forEach((m, i) => {
+                const val = (i + 1).toString().padStart(2, '0');
+                const opt = new Option(m, val);
+                monthSelect.add(opt);
+            });
+            // Years
+            const currentYear = new Date().getFullYear();
+            for (let i = 2020; i <= currentYear + 1; i++) {
+                const val = i.toString();
+                const opt = new Option(val, val);
+                yearSelect.add(opt);
+            }
+            // Defaults
+            const today = new Date();
+            daySelect.value = today.getDate().toString().padStart(2, '0');
+            monthSelect.value = (today.getMonth() + 1).toString().padStart(2, '0');
+            yearSelect.value = today.getFullYear().toString();
+        }
+
+        // --- Freeze List Dropdown ---
+        
+        async function loadFreezeListDropdown() {
+            try {
+                const select = document.getElementById('freeze-file-select');
+                select.innerHTML = '<option value="">Loading freeze files...</option>';
+                select.classList.add('loading');
+
+                // Use GitHub API to get repository contents
+                const apiUrl = 'https://api.github.com/repos/bu0965/Disconnection-List/contents/';
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Failed to fetch GitHub repository contents");
+                
+                const data = await response.json();
+                const freezeFiles = [];
+                
+                // Filter files starting with 'Freeze_' and having excel extensions
+                data.forEach(item => {
+                    if (item.type === 'file' && 
+                        item.name.startsWith('Freeze_') && 
+                        (item.name.endsWith('.xlsx') || item.name.endsWith('.xls'))) {
+                        freezeFiles.push(item.name);
+                    }
+                });
+
+                // If API fails, try alternative method
+                if (freezeFiles.length === 0) {
+                    return await loadFreezeListAlternative();
+                }
+
+                select.innerHTML = '<option value="">Select Freeze List from GitHub</option>';
+                
+                freezeFiles.sort().forEach(file => {
+                    const opt = new Option(file, file);
+                    select.add(opt);
+                });
+                
+                select.classList.remove('loading');
+                showNotification(`Loaded ${freezeFiles.length} freeze files from GitHub`);
+                
+            } catch (error) {
+                console.error("Error loading freeze list via API:", error);
+                // Try alternative method
+                await loadFreezeListAlternative();
+            }
+        }
+
+        // Alternative method to load freeze list
+        async function loadFreezeListAlternative() {
+            try {
+                const select = document.getElementById('freeze-file-select');
+                select.innerHTML = '<option value="">Loading freeze files (alternative method)...</option>';
+
+                // Try to fetch the main page and parse HTML
+                const response = await fetch(GITHUB_REPO_URL);
+                if (!response.ok) throw new Error("Failed to fetch GitHub repository");
+                
+                const html = await response.text();
+                
+                // Use regex to find all .xlsx and .xls files starting with Freeze_
+                const freezeFiles = [];
+                const regex = /href="(Freeze_[^"]*\.(xlsx|xls))"/gi;
+                let match;
+                
+                while ((match = regex.exec(html)) !== null) {
+                    if (match[1] && !freezeFiles.includes(match[1])) {
+                        freezeFiles.push(match[1]);
+                    }
+                }
+
+                select.innerHTML = '<option value="">Select Freeze List from GitHub</option>';
+                
+                freezeFiles.sort().forEach(file => {
+                    const opt = new Option(file, file);
+                    select.add(opt);
+                });
+                
+                select.classList.remove('loading');
+                showNotification(`Loaded ${freezeFiles.length} freeze files from GitHub`);
+                
+            } catch (error) {
+                console.error("Error loading freeze list (alternative):", error);
+                const select = document.getElementById('freeze-file-select');
+                select.innerHTML = '<option value="">Error loading freeze files</option>';
+                select.classList.remove('loading');
+                showNotification("Error loading freeze list from GitHub", true);
+            }
+        }
+        
+        document.getElementById('refresh-freeze-list').addEventListener('click', loadFreezeListDropdown);
+        
+        document.getElementById('freeze-file-select').addEventListener('change', async (e) => {
+            if (e.target.value) {
+                try {
+                    setLoading(true);
+                    const buffer = await fetchFileFromGitHub(e.target.value);
+                    selectedFreezeFile = new File([buffer], e.target.value, { 
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                    });
+                    document.getElementById('file-info').textContent = `Selected: ${e.target.value} (From GitHub)`;
+                    document.getElementById('freeze-file-input').value = ''; // Clear file input
+                    showNotification("Freeze File Selected from GitHub. Now Select Date and click Generate.");
+                } catch (error) {
+                    console.error("Error loading freeze file:", error);
+                    showNotification("Error loading freeze file from GitHub", true);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+
+        // --- File Handling ---
+
+        document.getElementById('freeze-file-input').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFreezeFile = e.target.files[0];
+                document.getElementById('file-info').textContent = `Selected: ${selectedFreezeFile.name} (${(selectedFreezeFile.size/1024).toFixed(1)} KB)`;
+                document.getElementById('freeze-file-select').value = '';
+                showNotification("Freeze File Selected. Now Select Date and click Generate.");
+            }
+        });
+
+        // --- Fetch Utilities ---
+
+        async function fetchFileFromGitHub(filename) {
+            const url = `${GITHUB_REPO_URL}${filename}`;
+            console.log(`Fetching: ${url}`);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`GitHub file not found: ${filename}`);
+            return await response.arrayBuffer();
+        }
+
+        async function loadDBSLookupData() {
+            try {
+                if (dbsLookupData) return dbsLookupData;
+                const buffer = await fetchFileFromGitHub('DBS.xlsx');
+                const wb = XLSX.read(buffer, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(ws, { header: 1, range: 'A2:D5000' });
+
+                const lookup = {};
+                json.forEach(row => {
+                    if (row[0]) {
+                        const vCode = String(row[0]).trim();
+                        const section = String(row[1] || '').trim();
+                        lookup[vCode] = section;
+                    }
+                });
+                dbsLookupData = lookup;
+                return lookup;
+            } catch (e) {
+                console.warn("DBS Load Failed", e);
+                return {};
+            }
+        }
+
+        // --- Main Logic Core ---
+
+        document.getElementById('generate-compliance').addEventListener('click', async () => {
+            if (!selectedFreezeFile) {
+                showNotification("Error: Please upload or select a Freeze List file first.", true);
+                return;
+            }
+
+            const day = document.getElementById('date-day').value;
+            const month = document.getElementById('date-month').value;
+            const year = document.getElementById('date-year').value;
+            
+            if (!day || !month || !year) {
+                showNotification("Error: Please select a valid date.", true);
+                return;
+            }
+
+            const gitFilename = `${day}-${month}-${year}.xlsx`;
+
+            setLoading(true);
+            updateProgress(10, "Loading DBS Data...");
+
+            try {
+                const dbsMap = await loadDBSLookupData();
+
+                updateProgress(30, "Reading Freeze File...");
+                const freezeBuffer = await selectedFreezeFile.arrayBuffer();
+                const freezeWb = XLSX.read(freezeBuffer, { type: 'array' });
+                const freezeWs = freezeWb.Sheets[freezeWb.SheetNames[0]];
+                const freezeData = XLSX.utils.sheet_to_json(freezeWs, { header: 1 });
+                freezeListData = freezeData;
+
+                updateProgress(50, `Fetching ${gitFilename} from GitHub...`);
+                let dailyBuffer;
+                try {
+                    dailyBuffer = await fetchFileFromGitHub(gitFilename);
+                } catch (e) {
+                    throw new Error(`Could not find file ${gitFilename} on GitHub.`);
+                }
+                const dailyWb = XLSX.read(dailyBuffer, { type: 'array' });
+                const dailyWs = dailyWb.Sheets[dailyWb.SheetNames[0]];
+                const dailyData = XLSX.utils.sheet_to_json(dailyWs, { header: 1 });
+
+                updateProgress(70, "Comparing Data...");
+                
+                processedData = performComparison(freezeData, dailyData, dbsMap);
+
+                updateProgress(90, "Rendering Table...");
+                renderTable(processedData);
+                
+                updateProgress(100, "Done!");
+                showNotification("Compliance Report Generated Successfully!");
+
+            } catch (error) {
+                console.error(error);
+                showNotification(error.message, true);
+            } finally {
+                setLoading(false);
+                setTimeout(() => { document.getElementById('progress-container').style.display = 'none'; }, 2000);
+            }
+        });
+
+        function performComparison(freezeRows, dailyRows, dbsMap) {
+            const results = {};
+            defaultSections.forEach(sec => {
+                results[sec] = {
+                    total: { c: 0, a: 0 },
+                    paid: { c: 0, a: 0 },
+                    partPaid: { c: 0, a: 0 },
+                    td: { c: 0, a: 0 },
+                    govt: { c: 0, a: 0 },
+                    balance: { c: 0, a: 0 }
+                };
+            });
+            results["Others"] = { total: {c:0,a:0}, paid: {c:0,a:0}, partPaid: {c:0,a:0}, td: {c:0,a:0}, govt: {c:0,a:0}, balance: {c:0,a:0} };
+
+            categorizedConsumers = {};
+
+            const dailyMap = new Map();
+            for (let i = 1; i < dailyRows.length; i++) {
+                const row = dailyRows[i];
+                if (row[6]) {
+                    const consNo = String(row[6]).trim();
+                    const amount = parseFloat(row[13]) || 0;
+                    const date = row[10];
+                    dailyMap.set(consNo, { amount, date });
+                }
+            }
+
+            const processedConsumers = new Set();
+
+            for (let i = 1; i < freezeRows.length; i++) {
+                const row = freezeRows[i];
+                const consNo = row[5] ? String(row[5]).trim() : null;
+                if (!consNo || processedConsumers.has(consNo)) continue;
+                
+                processedConsumers.add(consNo);
+
+                const villageCode = consNo.substring(0, 5);
+                let sectionName = dbsMap[villageCode] || "Others";
+                
+                sectionName = defaultSections.find(s => s.toLowerCase() === sectionName.toLowerCase()) || "Others";
+                if (!results[sectionName]) sectionName = "Others";
+
+                const freezeAmount = parseFloat(row[9]) || 0;
+                const tdValue = row[12];
+                const govtValue = String(row[7] || "").trim();
+                const freezeDate = row[8];
+
+                const dailyData = dailyMap.get(consNo);
+                
+                results[sectionName].total.c++;
+                results[sectionName].total.a += freezeAmount;
+
+                let isCategorized = false;
+                let category = "";
+
+                // Paid Category - दोन क्रायटेरिया:
+                // 1. दैनंदिन लिस्टमध्ये नाही
+                // 2. दैनंदिन लिस्टमध्ये आहे पण 100 रुपयांपेक्षा कमी बाकी
+                if (!dailyData) {
+                    // क्रायटेरिया 1: दैनंदिन लिस्टमध्ये नाही
+                    results[sectionName].paid.c++;
+                    results[sectionName].paid.a += freezeAmount;
+                    isCategorized = true;
+                    category = "Paid";
+                } 
+                else if (compareDates(dailyData.date, freezeDate) > 0) {
+                    // क्रायटेरिया 2: तारीख नवीन आहे - आता बाकी रक्कम तपासा
+                    const remainingAmount = freezeAmount - dailyData.amount;
+                    
+                    if (remainingAmount <= 100 && remainingAmount >= 0) {
+                        // 100 रुपयांपेक्षा कमी बाकी - Paid मध्ये
+                        results[sectionName].paid.c++;
+                        results[sectionName].paid.a += freezeAmount;
+                        isCategorized = true;
+                        category = "Paid";
+                    } else {
+                        // 100 रुपयांपेक्षा जास्त बाकी - Part Paid मध्ये
+                        results[sectionName].partPaid.c++;
+                        results[sectionName].partPaid.a += dailyData.amount;  // फक्त भरलेली रक्कम
+                        isCategorized = true;
+                        category = "Part Paid";
+                    }
+                }
+
+                // TD Category
+                if (!isCategorized && tdValue != undefined && tdValue !== "" && tdValue != null) {
+                    results[sectionName].td.c++;
+                    results[sectionName].td.a += freezeAmount;
+                    isCategorized = true;
+                    category = "TD";
+                }
+
+                // Govt Category
+                if (!isCategorized && govtValue === "7.Public S") {
+                    results[sectionName].govt.c++;
+                    results[sectionName].govt.a += freezeAmount;
+                    isCategorized = true;
+                    category = "Govt";
+                }
+
+                // Balance Category
+                if (!isCategorized) {
+                    category = "Balance";
+                }
+
+                categorizedConsumers[consNo] = category;
+            }
+
+            // Balance calculation
+            Object.keys(results).forEach(section => {
+                const d = results[section];
+                d.balance.c = d.total.c - (d.paid.c + d.partPaid.c + d.td.c + d.govt.c);
+                d.balance.a = d.total.a - (d.paid.a + d.partPaid.a + d.td.a + d.govt.a);
+            });
+
+            return results;
+        }
+
+        function compareDates(dateNew, dateOld) {
+            const d1 = parseDate(dateNew);
+            const d2 = parseDate(dateOld);
+            
+            if (!d1 || !d2) return 0;
+            
+            return d1.getTime() - d2.getTime();
+        }
+
+        function parseDate(val) {
+            if (!val) return null;
+            
+            if (typeof val === 'number') {
+                return new Date((val - 25569) * 86400 * 1000);
+            }
+            
+            if (typeof val === 'string') {
+                const parts = val.split(/[-/]/);
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0]);
+                    const month = parseInt(parts[1]) - 1;
+                    const year = parseInt(parts[2]);
+                    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                        return new Date(year, month, day);
+                    }
+                }
+                
+                const parsed = new Date(val);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed;
+                }
+            }
+            
+            return null;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            const gt = new Array(12).fill(0); 
+            const sectionsToRender = [...defaultSections, "Others"];
+
+            sectionsToRender.forEach(sec => {
+                const d = data[sec];
+                if (!d || d.total.c === 0) return;
+
+                const tr = document.createElement('tr');
+                
+                const createTd = (val, isAmt) => {
+                    const el = document.createElement('td');
+                    if (isAmt) {
+                        el.textContent = typeof val === 'number' ? Math.abs(val).toFixed(2) : '0.00';
+                    } else {
+                        el.textContent = typeof val === 'number' ? Math.abs(Math.round(val)) : '0';
+                    }
+                    return el;
+                };
+
+                tr.appendChild(Object.assign(document.createElement('td'), {textContent: sec, style: "text-align:left; font-weight:bold"}));
+                
+                tr.appendChild(createTd(d.total.c, false));
+                tr.appendChild(createTd(d.total.a, true));
+                tr.appendChild(createTd(d.paid.c, false));
+                tr.appendChild(createTd(d.paid.a, true));
+                tr.appendChild(createTd(d.partPaid.c, false));
+                tr.appendChild(createTd(d.partPaid.a, true));
+                tr.appendChild(createTd(d.td.c, false));
+                tr.appendChild(createTd(d.td.a, true));
+                tr.appendChild(createTd(d.govt.c, false));
+                tr.appendChild(createTd(d.govt.a, true));
+                tr.appendChild(createTd(d.balance.c, false));
+                tr.appendChild(createTd(d.balance.a, true));
+
+                tbody.appendChild(tr);
+
+                gt[0] += d.total.c; gt[1] += d.total.a;
+                gt[2] += d.paid.c; gt[3] += d.paid.a;
+                gt[4] += d.partPaid.c; gt[5] += d.partPaid.a;
+                gt[6] += d.td.c; gt[7] += d.td.a;
+                gt[8] += d.govt.c; gt[9] += d.govt.a;
+                gt[10] += d.balance.c; gt[11] += d.balance.a;
+            });
+
+            const totalTr = document.createElement('tr');
+            totalTr.className = 'total-row';
+            const totalTd = document.createElement('td');
+            totalTd.textContent = "GRAND TOTAL";
+            totalTd.style.textAlign = "left";
+            totalTr.appendChild(totalTd);
+            
+            gt.forEach((val, idx) => {
+                const td = document.createElement('td');
+                if (idx % 2 === 1) {
+                    td.textContent = Math.abs(val).toFixed(2);
+                } else {
+                    td.textContent = Math.abs(Math.round(val));
+                }
+                totalTr.appendChild(td);
+            });
+            tbody.appendChild(totalTr);
+        }
+
+        function setLoading(isLoading) {
+            const btn = document.getElementById('generate-compliance');
+            if (isLoading) {
+                btn.textContent = "Processing...";
+                btn.disabled = true;
+                document.getElementById('progress-container').style.display = 'block';
+            } else {
+                btn.textContent = "GENERATE COMPLIANCE";
+                btn.disabled = false;
+            }
+        }
+
+        function updateProgress(percent, text) {
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = percent + '%';
+            bar.textContent = text;
+        }
+
+        function showNotification(msg, isError = false) {
+            const notif = document.getElementById('notification');
+            notif.textContent = msg;
+            notif.className = isError ? 'notification error' : 'notification';
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 4000);
+        }
+
+        document.getElementById('download-abstract').addEventListener('click', () => {
+            if(!processedData) return showNotification("No data to download", true);
+            
+            try {
+                const wb = XLSX.utils.table_to_book(document.getElementById('data-table'));
+                const fileName = `Compliance_Abstract_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showNotification("Abstract downloaded successfully!");
+            } catch (error) {
+                console.error("Download error:", error);
+                showNotification("Error downloading abstract", true);
+            }
+        });
+
+        document.getElementById('download-updated-list').addEventListener('click', () => {
+            if(!freezeListData || !categorizedConsumers) {
+                showNotification("No freeze list data available", true);
+                return;
+            }
+            
+            try {
+                const updatedData = [...freezeListData];
+                
+                if (updatedData[0].length < 14) {
+                    for (let i = updatedData[0].length; i < 14; i++) {
+                        updatedData[0].push("");
+                    }
+                }
+                updatedData[0][13] = "Remark";
+                
+                for (let i = 1; i < updatedData.length; i++) {
+                    const row = updatedData[i];
+                    const consNo = row[5] ? String(row[5]).trim() : null;
+                    
+                    while (row.length < 14) {
+                        row.push("");
+                    }
+                    
+                    if (consNo && categorizedConsumers[consNo]) {
+                        row[13] = categorizedConsumers[consNo];
+                    } else {
+                        row[13] = "";
+                    }
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(updatedData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Updated List");
+                
+                const fileName = `Updated_Freeze_List_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showNotification("Updated list downloaded successfully!");
+            } catch (error) {
+                console.error("Download error:", error);
+                showNotification("Error downloading updated list", true);
+            }
+        });
+
+        document.getElementById('back-to-dashboard').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
